@@ -11,6 +11,7 @@ import streamlit as st
 
 from src.config import settings
 from src.graph.debate_graph import run_debate
+from src.audio.tts import synthesize_debate, synthesize_speech
 
 st.set_page_config(page_title="MarketMind", page_icon="📊", layout="wide")
 
@@ -22,9 +23,29 @@ for warning in settings.validate():
 
 with st.sidebar:
     st.header("Settings")
-    ticker = st.text_input("Stock Ticker", value="TSLA").strip().upper()
-    rounds = st.slider("Debate Rounds", min_value=1, max_value=5, value=settings.DEBATE_ROUNDS)
-    run_clicked = st.button("Run Debate", type="primary", use_container_width=True)
+
+    ticker = st.text_input(
+        "Stock Ticker",
+        value="TSLA"
+    ).strip().upper()
+
+    rounds = st.slider(
+        "Debate Rounds",
+        min_value=1,
+        max_value=5,
+        value=settings.DEBATE_ROUNDS
+    )
+
+    voice_mode = st.toggle(
+        "🔊 Voice Mode",
+        value=False
+    )
+
+    run_clicked = st.button(
+        "Run Debate",
+        type="primary",
+        use_container_width=True
+    )
 
 if run_clicked and ticker:
     with st.spinner(f"Collecting data and running the investment committee debate for {ticker}..."):
@@ -58,6 +79,16 @@ if run_clicked and ticker:
         icon = role_icons.get(turn["role"], "🤖")
         with st.chat_message("assistant"):
             st.markdown(f"**{icon} {turn['role']}:** {turn['content']}")
+    if voice_mode:
+        try:
+            audio_bytes = synthesize_debate(transcript)
+
+            if audio_bytes:
+                st.markdown("### 🔊 Debate Audio")
+                st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+
+        except Exception as e:
+            st.warning(f"Voice Mode unavailable: {e}")
 
     # --- Final risk assessment ---
     st.subheader("📋 Final Investment Assessment")
@@ -85,6 +116,33 @@ if run_clicked and ticker:
         confidence = report.get("confidence_score")
         if confidence is not None:
             st.progress(min(max(int(confidence), 0), 100) / 100, text=f"Confidence Score: {confidence}/100")
+        
+        if voice_mode:
+            try:
+                verdict = f"""Committee verdict.
+
+                Overall risk level is {risk_level}.
+
+                {report.get("investment_outlook", "")}
+
+                Confidence score is {confidence} out of 100.
+                """
+
+                verdict_audio = synthesize_speech(
+                    verdict,
+                    role="Synthesis Agent"
+                )
+
+                st.markdown("### 🎙 Committee Verdict")
+
+                st.audio(
+                    verdict_audio,
+                    format="audio/mp3",
+                    autoplay=False
+                )
+
+            except Exception as e:
+                st.warning(f"Unable to generate verdict narration: {e}")
 
 elif run_clicked and not ticker:
     st.error("Please enter a stock ticker.")
