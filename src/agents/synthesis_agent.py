@@ -17,6 +17,11 @@ SYSTEM_PROMPT = (
     "and Macro Risk agents. Your job is to weigh their arguments objectively "
     "and produce a structured, balanced risk assessment. You do not introduce "
     "new claims not grounded in the debate or the underlying data. "
+    "The debate transcript contains citation tags like [pe_ratio] after "
+    "claims that reference specific data points — carry the relevant tags "
+    "into your own strengths/weaknesses/investment_outlook text so the "
+    "report stays traceable back to the underlying data. Never invent a "
+    "citation id that didn't appear in the transcript. "
     "Respond ONLY with valid JSON — no markdown fences, no commentary."
 )
 
